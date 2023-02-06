@@ -1,40 +1,12 @@
 #!/usr/bin/env bash
-#Installs and configures HAproxy in a load balancer server
-
-apt-get install -y software-properties-common
-add-apt-repository -y ppa:vbernat/haproxy-1.8
-apt-get update
-apt-get install -y haproxy=1.8.\*
-
-echo "ENABLED=1" >> /etc/default/haproxy
-mv /etc/haproxy/haproxy.cfg{,.original}
-touch /etc/haproxy/haproxy.cfg
-
-printf %s "global
-    log 127.0.0.1 local0 notice
-    maxconn 2000
-    user haproxy
-    group haproxy
-defaults
-    log     global
-    mode    http
-    option  httplog
-    option  dontlognull
-    retries 3
-    option redispatch
-    timeout connect  5000
-    timeout client  10000
-    timeout server  10000
-listen hbnb
-    bind 0.0.0.0:80
-    mode http
-    stats enable
-    stats uri /haproxy?stats
-    balance roundrobin
-    option httpclose
-    option forwardfor
-    server 59637-web-01 3.84.222.72:80 check
-    server 59637-web-02 54.237.226.255:80 check
-" >> /etc/haproxy/haproxy.cfg
-
-service haproxy start
+# Configure Nginx so that its HTTP response contains
+# a custom header
+# Add HAProxy PPA
+sudo apt-get install --no-install-recommends software-properties-common
+add-apt-repository ppa:vbernat/haproxy-2.7
+sudo apt-get -y update
+# Install HAProxy
+apt-get install haproxy=2.7.\*
+sudo sed -i -e '$aENABLED=1\n' /etc/default/haproxy
+sudo sed -i -e '$a\listen 70974-lb-01\n\tbind 0:80\n\tmode http\n\tstats enable\n\tbalance roundrobin\n\toption httpclose\n\toption forwardfor\n\tserver 85818-web-01 3.84.222.72:80 check\n\tserver 85818-web-02 54.237.226.255:80 check\n' /etc/haproxy/haproxy.cfg
+sudo service haproxy restart
